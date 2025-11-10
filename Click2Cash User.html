@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click2Cash - আয়ের অ্যাপ</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts for Bengali -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans Bengali', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            color: #1F2937;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Dynamic Background Shapes */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(135, 206, 235, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(152, 251, 152, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(135, 206, 235, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 60% 60%, rgba(152, 251, 152, 0.2) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #00CED1, #20B2AA);
+            color: white;
+            border-radius: 16px;
+            padding: 14px 24px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 206, 209, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 206, 209, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #20B2AA, #40E0D0);
+            color: white;
+            border-radius: 16px;
+            padding: 14px 24px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(32, 178, 170, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(32, 178, 170, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00CED1, #20B2AA);
+            color: white;
+            border-radius: 16px;
+            padding: 14px 24px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 206, 209, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 206, 209, 0.4);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+            color: #64748b;
+            transition: all 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 16px;
+        }
+
+        .nav-item.active {
+            color: #00CED1;
+            background: rgba(0, 206, 209, 0.1);
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* Wheel Styles */
+        .wheel-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .wheel-section {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: bottom right;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            background: #00CED1;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0, 206, 209, 0.3);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: modalAppear 0.3s ease-out;
+        }
+
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Notification Panel */
+        .notification-panel {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-panel.active {
+            right: 0;
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #00CED1, #20B2AA);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        /* Task Items */
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Auth Pages */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Input Fields */
+        input, select {
+            background: rgba(255, 255, 255, 0.7) !important;
+            backdrop-filter: blur(10px);
+            border-radius: 12px !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-color: #00CED1 !important;
+            box-shadow: 0 0 0 3px rgba(0, 206, 209, 0.2) !important;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Quick Actions Grid */
+        .quick-action-btn {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            padding: 16px;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .wheel-container {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .notification-panel {
+                width: 85%;
+                right: -85%;
+            }
+        }
+    </style>
+</head>
+<body class="pb-24">
+    <!-- Auth Pages -->
+    <div id="auth-section" class="auth-container">
+        <div class="auth-card">
+            <!-- Login Form -->
+            <div id="login-form">
+                <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">লগ ইন করুন</h2>
+                <form id="login-form-element">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">ইমেইল</label>
+                        <input type="email" id="login-email" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">পাসওয়ার্ড</label>
+                        <input type="password" id="login-password" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                    </div>
+                    <button type="submit" class="btn-primary w-full py-3 mb-4">
+                        লগ ইন
+                    </button>
+                </form>
+                <p class="text-center text-gray-600">
+                    অ্যাকাউন্ট নেই? 
+                    <a href="#" id="show-register" class="text-cyan-600 hover:underline">রেজিস্টার করুন</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="hidden">
+                <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">রেজিস্টার করুন</h2>
+                <form id="register-form-element">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">পুরো নাম</label>
+                        <input type="text" id="register-name" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">ইমেইল</label>
+                        <input type="email" id="register-email" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">পাসওয়ার্ড</label>
+                        <input type="password" id="register-password" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                    </div>
+                    <button type="submit" class="btn-primary w-full py-3 mb-4">
+                        রেজিস্টার
+                    </button>
+                </form>
+                <p class="text-center text-gray-600">
+                    ইতিমধ্যে অ্যাকাউন্ট আছে? 
+                    <a href="#" id="show-login" class="text-cyan-600 hover:underline">লগ ইন করুন</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App (Hidden Initially) -->
+    <div id="main-app" class="hidden">
+        <!-- Header -->
+        <header class="p-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Click2Cash</h1>
+                <p class="text-gray-600">আপনার আয়ের পথ</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="notification-btn" class="text-2xl text-gray-600">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden">0</span>
+                </div>
+                <div class="text-right">
+                    <p id="user-name" class="font-semibold text-gray-800">ব্যবহারকারী</p>
+                    <p class="text-sm text-gray-600">ব্যালেন্স: ৳<span id="header-balance">0.00</span></p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-4 max-w-lg mx-auto">
+            <!-- Home Section -->
+            <section id="home" class="content-section active">
+                <!-- Balance Card -->
+                <div class="glass-card p-6 mb-6 text-center">
+                    <h2 class="text-lg text-gray-600 mb-2">আপনার বর্তমান ব্যালেন্স</h2>
+                    <p class="text-5xl font-bold text-gray-800 tracking-widest">৳<span id="wallet-balance">0.00</span></p>
+                    <div class="mt-4 flex justify-around text-sm">
+                        <div>
+                            <p class="text-gray-600">আজকের আয়</p>
+                            <p class="font-bold text-gray-800">৳<span id="today-earnings">0.00</span></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">রেফারেল</p>
+                            <p class="font-bold text-gray-800"><span id="referral-count">0</span> জন</p>
+                        </div>
+                    </div>
+                    <button id="withdraw-btn" class="btn-primary mt-6 w-full">
+                        <i class="fas fa-money-bill-wave mr-2"></i> টাকা তুলুন
+                    </button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button id="watch-ad-btn" class="quick-action-btn flex flex-col items-center justify-center">
+                        <i class="fas fa-video text-3xl mb-2 text-cyan-500"></i>
+                        <span class="font-semibold text-gray-800">বিজ্ঞাপন দেখুন</span>
+                        <span class="text-xs text-gray-600 mt-1">৳০.১০ আয় করুন</span>
+                    </button>
+                    <button id="tasks-btn" class="quick-action-btn flex flex-col items-center justify-center">
+                        <i class="fas fa-tasks text-3xl mb-2 text-cyan-500"></i>
+                        <span class="font-semibold text-gray-800">টাস্ক করুন</span>
+                        <span class="text-xs text-gray-600 mt-1">৳০.৫০ - ৳৩.০০ আয় করুন</span>
+                    </button>
+                    <button id="spin-btn" class="quick-action-btn flex flex-col items-center justify-center">
+                        <i class="fas fa-dharmachakra text-3xl mb-2 text-cyan-500"></i>
+                        <span class="font-semibold text-gray-800">স্পিন অ্যান্ড উইন</span>
+                        <span class="text-xs text-gray-600 mt-1">৳০ - ৳১০ জিতুন</span>
+                    </button>
+                    <button id="refer-btn" class="quick-action-btn flex flex-col items-center justify-center">
+                        <i class="fas fa-user-plus text-3xl mb-2 text-cyan-500"></i>
+                        <span class="font-semibold text-gray-800">রেফার করুন</span>
+                        <span class="text-xs text-gray-600 mt-1">৳৫.০০ বোনাস পান</span>
+                    </button>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold mb-4 flex items-center text-gray-800">
+                        <i class="fas fa-history mr-3 text-cyan-500"></i>সাম্প্রতিক কার্যক্রম
+                    </h3>
+                    <div id="recent-activity" class="space-y-3">
+                        <!-- Activities will be populated by JavaScript -->
+                        <p class="text-center text-gray-600 py-4">কোনো সাম্প্রতিক কার্যক্রম নেই</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tasks Section -->
+            <section id="tasks" class="content-section">
+                <div class="glass-card p-6">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center text-gray-800">
+                        <i class="fas fa-tasks mr-3 text-cyan-500"></i>ডেইলি টাস্ক
+                    </h2>
+                    <p class="text-gray-600 mb-6">টাস্ক সম্পন্ন করে অর্থ উপার্জন করুন</p>
+                    
+                    <div id="tasks-list" class="space-y-4">
+                        <!-- Tasks will be populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Spin Section -->
+            <section id="spin" class="content-section">
+                <div class="glass-card p-6 text-center">
+                    <h2 class="text-2xl font-bold mb-2 text-gray-800">স্পিন অ্যান্ড উইন</h2>
+                    <p class="text-gray-600 mb-6">আপনার আজকের স্পিন: <span id="spins-left">3</span>/3</p>
+                    
+                    <div class="wheel-container mb-6">
+                        <div class="wheel-pointer"></div>
+                        <div class="wheel" id="wheel">
+                            <div class="wheel-section" style="background-color: #ff6b6b; transform: rotate(0deg);">৳0</div>
+                            <div class="wheel-section" style="background-color: #4ecdc4; transform: rotate(60deg);">৳0.5</div>
+                            <div class="wheel-section" style="background-color: #ffd166; transform: rotate(120deg);">৳1</div>
+                            <div class="wheel-section" style="background-color: #06d6a0; transform: rotate(180deg);">৳2</div>
+                            <div class="wheel-section" style="background-color: #118ab2; transform: rotate(240deg);">৳5</div>
+                            <div class="wheel-section" style="background-color: #ef476f; transform: rotate(300deg);">৳10</div>
+                        </div>
+                    </div>
+                    
+                    <button id="spin-wheel-btn" class="btn-secondary w-full py-3 text-lg">
+                        স্পিন করুন
+                    </button>
+                    
+                    <div class="mt-6 text-left">
+                        <h3 class="font-bold mb-2 text-gray-800">পুরস্কার:</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• ৳০.৫০ - ৳১০ পর্যন্ত জিততে পারেন</li>
+                            <li>• প্রতিদিন ৩ বার স্পিন করতে পারেন</li>
+                            <li>• পুরস্কার সরাসরি ব্যালেন্সে যোগ হবে</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Wallet Section -->
+            <section id="wallet" class="content-section">
+                <div class="glass-card p-6">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+                        <i class="fas fa-wallet mr-3 text-cyan-500"></i>আমার ওয়ালেট
+                    </h2>
+                    
+                    <div class="mb-6 p-4 bg-gradient-to-r from-cyan-100 to-cyan-200 rounded-xl">
+                        <p class="text-gray-600">মোট ব্যালেন্স</p>
+                        <p class="text-4xl font-bold my-2 text-gray-800">৳<span id="wallet-total">0.00</span></p>
+                        <p class="text-sm text-gray-600">ন্যূনতম উত্তোলন: ৳৫০.০০</p>
+                    </div>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="flex justify-between items-center p-3 bg-white/70 rounded-lg border border-white/30">
+                            <div>
+                                <p class="font-semibold text-gray-800">আজকের আয়</p>
+                                <p class="text-sm text-gray-600">বিজ্ঞাপন, টাস্ক এবং স্পিন থেকে</p>
+                            </div>
+                            <p class="text-xl font-bold text-green-500">৳<span id="wallet-today">0.00</span></p>
+                        </div>
+                        
+                        <div class="flex justify-between items-center p-3 bg-white/70 rounded-lg border border-white/30">
+                            <div>
+                                <p class="font-semibold text-gray-800">রেফারেল আয়</p>
+                                <p class="text-sm text-gray-600">রেফারেল থেকে প্রাপ্ত বোনাস</p>
+                            </div>
+                            <p class="text-xl font-bold text-cyan-500">৳<span id="wallet-referral">0.00</span></p>
+                        </div>
+                    </div>
+                    
+                    <button id="wallet-withdraw-btn" class="btn-primary w-full py-3">
+                        <i class="fas fa-money-bill-wave mr-2"></i> টাকা উত্তোলন করুন
+                    </button>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section id="profile" class="content-section">
+                <div class="glass-card p-6">
+                    <h2 class="text-2xl font-bold mb-6 flex items-center text-gray-800">
+                        <i class="fas fa-user mr-3 text-cyan-500"></i>আমার প্রোফাইল
+                    </h2>
+                    
+                    <div class="flex items-center mb-6">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300 flex items-center justify-center text-white text-2xl font-bold mr-4">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <p id="profile-name" class="font-bold text-xl text-gray-800">ব্যবহারকারী</p>
+                            <p class="text-gray-600">সদস্য since <span id="join-date">আজ</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="p-4 bg-white/70 rounded-lg border border-white/30">
+                            <p class="text-gray-600 mb-1">আপনার রেফারেল লিঙ্ক</p>
+                            <div class="flex">
+                                <input type="text" id="referral-link" class="flex-grow p-2 bg-gray-100 rounded-l-lg border border-gray-300" readonly>
+                                <button id="copy-link" class="bg-cyan-500 text-white px-4 rounded-r-lg">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-2">এই লিঙ্ক শেয়ার করুন এবং প্রতিটি রেফারেলের জন্য ৳৫ পান</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-3 bg-white/70 rounded-lg border border-white/30 text-center">
+                                <p class="text-2xl font-bold text-cyan-500" id="profile-tasks">0</p>
+                                <p class="text-gray-600 text-sm">সম্পন্ন টাস্ক</p>
+                            </div>
+                            <div class="p-3 bg-white/70 rounded-lg border border-white/30 text-center">
+                                <p class="text-2xl font-bold text-green-500" id="profile-referrals">0</p>
+                                <p class="text-gray-600 text-sm">রেফারেল</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="logout-btn" class="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>লগ আউট
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-item active" data-section="home">
+                <i class="fas fa-home"></i>
+                <span>হোম</span>
+            </a>
+            <a href="#" class="nav-item" data-section="tasks">
+                <i class="fas fa-tasks"></i>
+                <span>টাস্ক</span>
+            </a>
+            <a href="#" class="nav-item" data-section="spin">
+                <i class="fas fa-dharmachakra"></i>
+                <span>স্পিন</span>
+            </a>
+            <a href="#" class="nav-item" data-section="wallet">
+                <i class="fas fa-wallet"></i>
+                <span>ওয়ালেট</span>
+            </a>
+            <a href="#" class="nav-item" data-section="profile">
+                <i class="fas fa-user"></i>
+                <span>প্রোফাইল</span>
+            </a>
+        </nav>
+
+        <!-- Withdraw Modal -->
+        <div id="withdraw-modal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-xl font-bold mb-4 text-center text-gray-800">টাকা উত্তোলন করুন</h2>
+                <form id="withdraw-form">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">আপনার নাম</label>
+                        <input type="text" id="withdraw-name" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">পেমেন্ট মেথড</label>
+                        <select id="withdraw-method" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                            <option value="bKash">bKash</option>
+                            <option value="Nagad">Nagad</option>
+                            <option value="Rocket">Rocket</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">মোবাইল নম্বর</label>
+                        <input type="text" id="withdraw-number" class="w-full p-3 rounded-lg focus:border-cyan-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">পরিমাণ (৳)</label>
+                        <input type="text" id="withdraw-amount" class="w-full p-3 rounded-lg focus:border-cyan-500" readonly>
+                    </div>
+                    <div class="flex justify-between mt-6">
+                        <button type="button" id="cancel-withdraw" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg">বাতিল</button>
+                        <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg">জমা দিন</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notification Panel -->
+        <div class="notification-panel">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800">নোটিফিকেশন</h2>
+                <button id="close-notification" class="text-2xl text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="notification-list" class="space-y-4">
+                <!-- Notifications will be populated by JavaScript -->
+                <p class="text-center text-gray-600 py-8">কোনো নোটিফিকেশন নেই</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdqZJ_ydfy05zqmJ4uauR_HluPTJDTv3s",
+            authDomain: "click2cash-89436.firebaseapp.com",
+            databaseURL: "https://click2cash-89436-default-rtdb.firebaseio.com",
+            projectId: "click2cash-89436",
+            storageBucket: "click2cash-89436.firebasestorage.app",
+            messagingSenderId: "884760732782",
+            appId: "1:884760732782:web:44680c2b4eabd2ae1cb27f"
+        };
+
+        // Firebase Initialization
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Global Variables
+        let currentUser = null;
+        let userData = null;
+        let userListener = null;
+
+        // Authentication Functions
+        function showAuthSection() {
+            document.getElementById('auth-section').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+        }
+
+        function switchToRegister() {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+        }
+
+        function switchToLogin() {
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+        }
+
+        // User Data Management with Firebase
+        async function initializeUserData(user) {
+            const userRef = db.collection('users').doc(user.uid);
+            const userDoc = await userRef.get();
+            
+            if (!userDoc.exists) {
+                // Check for referral
+                const urlParams = new URLSearchParams(window.location.search);
+                const ref = urlParams.get('ref');
+                
+                const newUserData = {
+                    uid: user.uid,
+                    email: user.email,
+                    name: user.displayName || 'ব্যবহারকারী',
+                    balance: 0,
+                    todayEarnings: 0,
+                    totalEarnings: 0,
+                    referralEarnings: 0,
+                    adsCompleted: 0,
+                    tasksCompleted: [],
+                    spinsUsed: 0,
+                    lastSpinDate: null,
+                    referrals: 0,
+                    joinDate: new Date().toISOString(),
+                    referredBy: ref || null
+                };
+                
+                await userRef.set(newUserData);
+                
+                // If referred, give bonus to referrer
+                if (ref) {
+                    const referrerRef = db.collection('users').doc(ref);
+                    const referrerDoc = await referrerRef.get();
+                    
+                    if (referrerDoc.exists) {
+                        await referrerRef.update({
+                            balance: firebase.firestore.FieldValue.increment(5),
+                            referralEarnings: firebase.firestore.FieldValue.increment(5),
+                            referrals: firebase.firestore.FieldValue.increment(1)
+                        });
+                        
+                        // Add notification for referrer
+                        await db.collection('notifications').add({
+                            userId: ref,
+                            title: 'রেফারেল বোনাস!',
+                            message: `আপনার রেফারেল লিঙ্ক ব্যবহার করে একজন নতুন ব্যবহারকারী যোগদান করেছেন। ৳৫.০০ বোনাস পেয়েছেন!`,
+                            timestamp: new Date().toISOString(),
+                            read: false
+                        });
+                    }
+                }
+                
+                return newUserData;
+            } else {
+                return userDoc.data();
+            }
+        }
+
+        function listenToUserData(uid) {
+            if (userListener) userListener(); // Remove previous listener
+            
+            userListener = db.collection('users').doc(uid).onSnapshot((doc) => {
+                if (doc.exists) {
+                    userData = doc.data();
+                    updateUI();
+                }
+            });
+        }
+
+        // Update UI Functions
+        function updateUI() {
+            if (!userData) return;
+            
+            // Update balance and earnings
+            document.getElementById('wallet-balance').textContent = userData.balance.toFixed(2);
+            document.getElementById('header-balance').textContent = userData.balance.toFixed(2);
+            document.getElementById('today-earnings').textContent = userData.todayEarnings.toFixed(2);
+            document.getElementById('referral-count').textContent = userData.referrals;
+            
+            // Update wallet section
+            document.getElementById('wallet-total').textContent = userData.balance.toFixed(2);
+            document.getElementById('wallet-today').textContent = userData.todayEarnings.toFixed(2);
+            document.getElementById('wallet-referral').textContent = userData.referralEarnings.toFixed(2);
+            
+            // Update profile section
+            document.getElementById('profile-name').textContent = userData.name;
+            document.getElementById('user-name').textContent = userData.name;
+            document.getElementById('join-date').textContent = new Date(userData.joinDate).toLocaleDateString('bn-BD');
+            document.getElementById('profile-tasks').textContent = userData.tasksCompleted.length;
+            document.getElementById('profile-referrals').textContent = userData.referrals;
+            
+            // Update referral link
+            document.getElementById('referral-link').value = window.location.origin + window.location.pathname + '?ref=' + currentUser.uid;
+            
+            // Update spins left
+            const today = new Date().toDateString();
+            if (userData.lastSpinDate !== today) {
+                // Reset spins for new day
+                db.collection('users').doc(currentUser.uid).update({
+                    spinsUsed: 0,
+                    lastSpinDate: today
+                });
+            }
+            document.getElementById('spins-left').textContent = 3 - userData.spinsUsed;
+            
+            // Disable spin button if no spins left
+            if (userData.spinsUsed >= 3) {
+                document.getElementById('spin-wheel-btn').disabled = true;
+                document.getElementById('spin-wheel-btn').classList.add('opacity-50');
+            } else {
+                document.getElementById('spin-wheel-btn').disabled = false;
+                document.getElementById('spin-wheel-btn').classList.remove('opacity-50');
+            }
+            
+            // Disable withdraw button if balance < 50
+            if (userData.balance < 50) {
+                document.getElementById('withdraw-btn').disabled = true;
+                document.getElementById('withdraw-btn').classList.add('opacity-50');
+                document.getElementById('wallet-withdraw-btn').disabled = true;
+                document.getElementById('wallet-withdraw-btn').classList.add('opacity-50');
+            } else {
+                document.getElementById('withdraw-btn').disabled = false;
+                document.getElementById('withdraw-btn').classList.remove('opacity-50');
+                document.getElementById('wallet-withdraw-btn').disabled = false;
+                document.getElementById('wallet-withdraw-btn').classList.remove('opacity-50');
+            }
+            
+            // Update tasks list
+            updateTasksList();
+            
+            // Update recent activities
+            updateRecentActivities();
+            
+            // Update notifications
+            updateNotifications();
+        }
+
+        async function updateTasksList() {
+            const tasksList = document.getElementById('tasks-list');
+            tasksList.innerHTML = '';
+            
+            const tasksSnapshot = await db.collection('tasks').where('status', '==', 'active').get();
+            
+            if (tasksSnapshot.empty) {
+                tasksList.innerHTML = '<p class="text-center text-gray-600 py-4">কোনো টাস্ক নেই</p>';
+                return;
+            }
+            
+            const today = new Date().toDateString();
+            
+            tasksSnapshot.forEach(doc => {
+                const task = doc.data();
+                const isCompleted = userData.tasksCompleted.includes(doc.id + '_' + today);
+                
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task-item';
+                taskElement.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="${task.icon || 'fas fa-tasks'} text-cyan-500 text-2xl mr-4"></i>
+                        <div>
+                            <p class="font-semibold text-gray-800">${task.name}</p>
+                            <p class="text-sm text-green-500">পুরস্কার: ৳${task.reward.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <button class="task-btn ${isCompleted ? 'bg-gray-400' : 'bg-green-500'} text-white px-4 py-2 rounded-md text-sm font-bold" 
+                            data-id="${doc.id}" data-reward="${task.reward}" ${isCompleted ? 'disabled' : ''}>
+                        ${isCompleted ? 'সম্পন্ন' : 'করুন'}
+                    </button>
+                `;
+                tasksList.appendChild(taskElement);
+            });
+        }
+
+        async function updateRecentActivities() {
+            const activitiesContainer = document.getElementById('recent-activity');
+            activitiesContainer.innerHTML = '';
+            
+            // Fixed query without composite index requirement
+            const activitiesSnapshot = await db.collection('activities')
+                .where('userId', '==', currentUser.uid)
+                .get();
+            
+            if (activitiesSnapshot.empty) {
+                activitiesContainer.innerHTML = '<p class="text-center text-gray-600 py-4">কোনো সাম্প্রতিক কার্যক্রম নেই</p>';
+                return;
+            }
+            
+            // Sort activities by timestamp manually
+            const activities = [];
+            activitiesSnapshot.forEach(doc => {
+                activities.push({ id: doc.id, ...doc.data() });
+            });
+            
+            activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Display only the latest 5 activities
+            const latestActivities = activities.slice(0, 5);
+            
+            latestActivities.forEach(activity => {
+                const activityElement = document.createElement('div');
+                activityElement.className = 'flex justify-between items-center p-3 bg-white/70 rounded-lg border border-white/30';
+                activityElement.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-800">${activity.title}</p>
+                        <p class="text-sm text-gray-600">${new Date(activity.timestamp).toLocaleString('bn-BD')}</p>
+                    </div>
+                    <p class="text-green-500 font-bold">+৳${activity.amount.toFixed(2)}</p>
+                `;
+                activitiesContainer.appendChild(activityElement);
+            });
+        }
+
+        async function updateNotifications() {
+            const notificationList = document.getElementById('notification-list');
+            notificationList.innerHTML = '';
+            
+            // Fixed query without composite index requirement
+            const notificationsSnapshot = await db.collection('notifications')
+                .where('userId', '==', currentUser.uid)
+                .get();
+            
+            if (notificationsSnapshot.empty) {
+                notificationList.innerHTML = '<p class="text-center text-gray-600 py-8">কোনো নোটিফিকেশন নেই</p>';
+                return;
+            }
+            
+            // Sort notifications by timestamp manually
+            const notifications = [];
+            notificationsSnapshot.forEach(doc => {
+                notifications.push({ id: doc.id, ...doc.data() });
+            });
+            
+            notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Display only the latest 10 notifications
+            const latestNotifications = notifications.slice(0, 10);
+            
+            let unreadCount = 0;
+            
+            latestNotifications.forEach(notification => {
+                if (!notification.read) unreadCount++;
+                
+                const notificationElement = document.createElement('div');
+                notificationElement.className = `p-4 rounded-lg border ${notification.read ? 'bg-white/70 border-white/30' : 'bg-cyan-50 border-cyan-200'}`;
+                notificationElement.innerHTML = `
+                    <h3 class="font-bold mb-1 text-gray-800">${notification.title}</h3>
+                    <p class="text-sm text-gray-600 mb-2">${notification.message}</p>
+                    <p class="text-xs text-gray-500">${new Date(notification.timestamp).toLocaleString('bn-BD')}</p>
+                `;
+                notificationList.appendChild(notificationElement);
+                
+                // Mark as read when displayed in panel
+                if (!notification.read) {
+                    db.collection('notifications').doc(notification.id).update({ read: true });
+                }
+            });
+            
+            // Update notification badge
+            const badge = document.getElementById('notification-badge');
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        async function addActivity(title, amount) {
+            await db.collection('activities').add({
+                userId: currentUser.uid,
+                title,
+                amount,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        async function addNotification(title, message) {
+            await db.collection('notifications').add({
+                userId: currentUser.uid,
+                title,
+                message,
+                timestamp: new Date().toISOString(),
+                read: false
+            });
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all nav items
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                
+                // Add active class to clicked nav item
+                this.classList.add('active');
+                
+                // Hide all content sections
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // Show selected content section
+                const sectionId = this.getAttribute('data-section');
+                document.getElementById(sectionId).classList.add('active');
+            });
+        });
+
+        // Authentication Event Listeners
+        document.getElementById('show-register').addEventListener('click', function(e) {
+            e.preventDefault();
+            switchToRegister();
+        });
+
+        document.getElementById('show-login').addEventListener('click', function(e) {
+            e.preventDefault();
+            switchToLogin();
+        });
+
+        document.getElementById('login-form-element').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('User logged in:', userCredential.user);
+            } catch (error) {
+                alert('লগ ইন ব্যর্থ: ' + error.message);
+            }
+        });
+
+        document.getElementById('register-form-element').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await userCredential.user.updateProfile({ displayName: name });
+                console.log('User registered:', userCredential.user);
+            } catch (error) {
+                alert('রেজিস্ট্রেশন ব্যর্থ: ' + error.message);
+            }
+        });
+
+        // Watch Ad Functionality - FIXED
+        document.getElementById('watch-ad-btn').addEventListener('click', async function() {
+            try {
+                // Get active ad from database
+                const adsSnapshot = await db.collection('ads').where('status', '==', 'active').limit(1).get();
+                
+                if (adsSnapshot.empty) {
+                    alert('বর্তমানে কোনো বিজ্ঞাপন নেই। পরে আবার চেষ্টা করুন।');
+                    return;
+                }
+                
+                const adDoc = adsSnapshot.docs[0];
+                const ad = adDoc.data();
+                
+                // Open ad link in new tab
+                const adWindow = window.open(ad.link, '_blank');
+                
+                // Add reward after a short delay (simulating ad completion)
+                setTimeout(async function() {
+                    await db.collection('users').doc(currentUser.uid).update({
+                        balance: firebase.firestore.FieldValue.increment(ad.reward),
+                        todayEarnings: firebase.firestore.FieldValue.increment(ad.reward),
+                        totalEarnings: firebase.firestore.FieldValue.increment(ad.reward),
+                        adsCompleted: firebase.firestore.FieldValue.increment(1)
+                    });
+                    
+                    // Update ad clicks
+                    await db.collection('ads').doc(adDoc.id).update({
+                        clicks: firebase.firestore.FieldValue.increment(1)
+                    });
+                    
+                    await addActivity('বিজ্ঞাপন দেখেছেন', ad.reward);
+                    await addNotification('বিজ্ঞাপন দেখেছেন', `আপনি একটি বিজ্ঞাপন দেখেছেন এবং ৳${ad.reward.toFixed(2)} পেয়েছেন!`);
+                    
+                    // Show success message
+                    alert(`বিজ্ঞাপন দেখার জন্য আপনাকে ধন্যবাদ! ৳${ad.reward.toFixed(2)} যোগ করা হয়েছে।`);
+                }, 5000); // 5 seconds delay for demo
+            } catch (error) {
+                alert('বিজ্ঞাপন দেখতে সমস্যা হয়েছে: ' + error.message);
+            }
+        });
+
+        // Task Completion
+        document.addEventListener('click', async function(e) {
+            if (e.target.classList.contains('task-btn')) {
+                const taskId = e.target.getAttribute('data-id');
+                const reward = parseFloat(e.target.getAttribute('data-reward'));
+                
+                // Check if task already completed today
+                const today = new Date().toDateString();
+                const taskKey = taskId + '_' + today;
+                
+                if (!userData.tasksCompleted.includes(taskKey)) {
+                    await db.collection('users').doc(currentUser.uid).update({
+                        balance: firebase.firestore.FieldValue.increment(reward),
+                        todayEarnings: firebase.firestore.FieldValue.increment(reward),
+                        totalEarnings: firebase.firestore.FieldValue.increment(reward),
+                        tasksCompleted: firebase.firestore.FieldValue.arrayUnion(taskKey)
+                    });
+                    
+                    // Update task completion count
+                    await db.collection('tasks').doc(taskId).update({
+                        completions: firebase.firestore.FieldValue.increment(1)
+                    });
+                    
+                    await addActivity('টাস্ক সম্পন্ন', reward);
+                    await addNotification('টাস্ক সম্পন্ন', `আপনি একটি টাস্ক সম্পন্ন করেছেন এবং ৳${reward.toFixed(2)} পেয়েছেন!`);
+                    
+                    // Show success message
+                    alert(`টাস্ক সম্পন্ন! ৳${reward.toFixed(2)} যোগ করা হয়েছে।`);
+                } else {
+                    alert('আপনি ইতিমধ্যে আজ এই টাস্কটি সম্পন্ন করেছেন!');
+                }
+            }
+        });
+
+        // Spin Wheel Functionality
+        document.getElementById('spin-wheel-btn').addEventListener('click', async function() {
+            // Check if user has spins left
+            if (userData.spinsUsed >= 3) {
+                alert('আপনি আজকের সব স্পিন ব্যবহার করেছেন! আগামীকাল আবার চেষ্টা করুন।');
+                return;
+            }
+            
+            // Disable button during spin
+            this.disabled = true;
+            
+            // Determine prize
+            const prizes = [0, 0.5, 1, 2, 5, 10];
+            const prizeIndex = Math.floor(Math.random() * prizes.length);
+            const prize = prizes[prizeIndex];
+            
+            // Calculate rotation (full rotations + prize position)
+            const fullRotations = 5; // Number of full rotations
+            const sectionAngle = 60; // Each section is 60 degrees
+            const targetRotation = fullRotations * 360 + (360 - (prizeIndex * sectionAngle)) - (sectionAngle / 2);
+            
+            // Apply rotation
+            const wheel = document.getElementById('wheel');
+            wheel.style.transform = `rotate(${targetRotation}deg)`;
+            
+            // Update user data after spin completes
+            setTimeout(async () => {
+                await db.collection('users').doc(currentUser.uid).update({
+                    balance: firebase.firestore.FieldValue.increment(prize),
+                    todayEarnings: firebase.firestore.FieldValue.increment(prize),
+                    totalEarnings: firebase.firestore.FieldValue.increment(prize),
+                    spinsUsed: firebase.firestore.FieldValue.increment(1)
+                });
+                
+                await addActivity('স্পিন থেকে জয়', prize);
+                await addNotification('স্পিন থেকে জয়', `আপনি স্পিন থেকে ৳${prize.toFixed(2)} জিতেছেন!`);
+                
+                // Show prize alert
+                if (prize > 0) {
+                    alert(`অভিনন্দন! আপনি জিতেছেন: ৳${prize.toFixed(2)}`);
+                } else {
+                    alert('দুর্ভাগ্যবশত আপনি এইবার জিততে পারেননি। আবার চেষ্টা করুন!');
+                }
+                
+                // Re-enable button if spins left
+                if (userData.spinsUsed < 2) { // Already incremented by 1
+                    this.disabled = false;
+                }
+            }, 4000); // Match the transition duration
+        });
+
+        // Withdraw Functionality
+        document.getElementById('withdraw-btn').addEventListener('click', showWithdrawModal);
+        document.getElementById('wallet-withdraw-btn').addEventListener('click', showWithdrawModal);
+
+        function showWithdrawModal() {
+            if (userData.balance < 50) {
+                alert('ন্যূনতম ৳50 উত্তোলন করতে হবে!');
+                return;
+            }
+            
+            document.getElementById('withdraw-amount').value = userData.balance.toFixed(2);
+            document.getElementById('withdraw-modal').style.display = 'flex';
+        }
+
+        document.getElementById('withdraw-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const amount = userData.balance;
+            const name = document.getElementById('withdraw-name').value;
+            const method = document.getElementById('withdraw-method').value;
+            const number = document.getElementById('withdraw-number').value;
+            
+            // Create withdrawal request
+            await db.collection('withdrawals').add({
+                userId: currentUser.uid,
+                userName: userData.name,
+                amount: amount,
+                method: method,
+                number: number,
+                status: 'pending',
+                timestamp: new Date().toISOString()
+            });
+            
+            // Reset user balance
+            await db.collection('users').doc(currentUser.uid).update({
+                balance: 0,
+                todayEarnings: 0
+            });
+            
+            document.getElementById('withdraw-modal').style.display = 'none';
+            await addNotification('উত্তোলনের অনুরোধ', `আপনার ৳${amount.toFixed(2)} উত্তোলনের অনুরোধ পাঠানো হয়েছে। ২৪-৪৮ ঘন্টার মধ্যে পেমেন্ট করা হবে।`);
+            alert('উত্তোলনের অনুরোধ পাঠানো হয়েছে! ২৪-৪৮ ঘন্টার মধ্যে পেমেন্ট করা হবে।');
+        });
+
+        // Referral Functionality
+        document.getElementById('refer-btn').addEventListener('click', function() {
+            const referralLink = window.location.origin + window.location.pathname + '?ref=' + currentUser.uid;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(referralLink).then(function() {
+                alert('রেফারেল লিঙ্ক কপি করা হয়েছে! শেয়ার করুন এবং প্রতিটি রেফারেলের জন্য ৳৫ পান।');
+                addNotification('রেফারেল লিঙ্ক', 'আপনার রেফারেল লিঙ্ক কপি করা হয়েছে। শেয়ার করুন এবং আয় করুন!');
+            }, function() {
+                // Fallback for older browsers
+                const tempInput = document.createElement('input');
+                tempInput.value = referralLink;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('রেফারেল লিঙ্ক কপি করা হয়েছে! শেয়ার করুন এবং প্রতিটি রেফারেলের জন্য ৳৫ পান।');
+                addNotification('রেফারেল লিঙ্ক', 'আপনার রেফারেল লিঙ্ক কপি করা হয়েছে। শেয়ার করুন এবং আয় করুন!');
+            });
+        });
+
+        document.getElementById('copy-link').addEventListener('click', function() {
+            const referralLink = document.getElementById('referral-link');
+            referralLink.select();
+            document.execCommand('copy');
+            alert('রেফারেল লিঙ্ক কপি করা হয়েছে!');
+            addNotification('রেফারেল লিঙ্ক', 'আপনার রেফারেল লিঙ্ক কপি করা হয়েছে। শেয়ার করুন এবং আয় করুন!');
+        });
+
+        // Notification Panel
+        document.getElementById('notification-btn').addEventListener('click', function() {
+            document.querySelector('.notification-panel').classList.add('active');
+        });
+
+        document.getElementById('close-notification').addEventListener('click', function() {
+            document.querySelector('.notification-panel').classList.remove('active');
+        });
+
+        // Modal Close Functions
+        document.getElementById('cancel-withdraw').addEventListener('click', function() {
+            document.getElementById('withdraw-modal').style.display = 'none';
+        });
+
+        // Logout Functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            if (confirm('আপনি কি নিশ্চিত যে আপনি লগ আউট করতে চান?')) {
+                auth.signOut();
+            }
+        });
+
+        // Auth State Listener
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                userData = await initializeUserData(user);
+                listenToUserData(user.uid);
+                showMainApp();
+                
+                // Add welcome notification for new users
+                const notificationsSnapshot = await db.collection('notifications')
+                    .where('userId', '==', user.uid)
+                    .get();
+                
+                if (notificationsSnapshot.empty) {
+                    await addNotification('স্বাগতম!', 'Click2Cash-এ আপনাকে স্বাগতম! অর্থ উপার্জন শুরু করতে বিজ্ঞাপন দেখুন, টাস্ক করুন এবং স্পিন করুন।');
+                }
+            } else {
+                currentUser = null;
+                userData = null;
+                if (userListener) userListener();
+                showAuthSection();
+            }
+        });
+
+        // Initialize Default Tasks
+        async function initializeDefaultTasks() {
+            const tasksSnapshot = await db.collection('tasks').limit(1).get();
+            
+            if (tasksSnapshot.empty) {
+                const defaultTasks = [
+                    { name: 'ইউটিউব ভিডিও দেখুন', description: 'ইউটিউব ভিডিও দেখুন এবং পুরস্কার পান', reward: 0.5, icon: 'fab fa-youtube', color: 'text-red-500', status: 'active', completions: 0 },
+                    { name: 'ফেসবুক পেজ লাইক করুন', description: 'ফেসবুক পেজ লাইক করুন এবং পুরস্কার পান', reward: 1.0, icon: 'fab fa-facebook', color: 'text-blue-400', status: 'active', completions: 0 },
+                    { name: 'অ্যাপ ইনস্টল করুন', description: 'অ্যাপ ইনস্টল করুন এবং পুরস্কার পান', reward: 3.0, icon: 'fas fa-download', color: 'text-green-400', status: 'active', completions: 0 }
+                ];
+                
+                defaultTasks.forEach(task => {
+                    db.collection('tasks').add(task);
+                });
+            }
+        }
+
+        // Initialize Default Ads
+        async function initializeDefaultAds() {
+            const adsSnapshot = await db.collection('ads').limit(1).get();
+            
+            if (adsSnapshot.empty) {
+                const defaultAds = [
+                    { name: 'গুগল বিজ্ঞাপন', link: 'https://www.google.com', reward: 0.10, icon: 'fab fa-google', status: 'active', clicks: 0, createdAt: new Date().toISOString() }
+                ];
+                
+                defaultAds.forEach(ad => {
+                    db.collection('ads').add(ad);
+                });
+            }
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDefaultTasks();
+            initializeDefaultAds();
+        });
+    </script>
+</body>
+</html>
