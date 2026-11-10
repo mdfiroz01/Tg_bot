@@ -1,0 +1,15 @@
+
+[
+  {
+    "id": "video001",
+    "title": "Sample Video",
+    "author": "NightStream",
+    "thumb": "/static/thumbnails/sample.jpg",
+    "m3u8": "https://YOUR-AUTHORIZED-VIDEO-HOST/video/master.m3u8",
+    "views": 1200,
+    "duration": "05:30",
+    "tags": ["sample", "demo"],
+    "likes": 10,
+    "dislikes": 0
+  }
+]
